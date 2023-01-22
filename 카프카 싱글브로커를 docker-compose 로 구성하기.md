@@ -1,7 +1,5 @@
 # 카프카 싱글브로커를 docker-compose로 구성하기
 
-테스트환경으로 kafka single broker 를 구동할 경우도 있기에 docker-compose 로 카프카를 구동시키는 과정을 정리해두기로 했다.<br>
-
 사실은 single broker 로 굉장히 편하게 넘어가려 했는데 결국 멀티브로커로 구성해야 했었다.
 
 
@@ -18,12 +16,11 @@
   - 제일 처음으로 참고했던 자료.
   - 하다가 안되서 1시간 정도... 헤맸다.
 
-
 <br>
 
 
 
-### compose yml파일 작성
+### compose yml 파일 작성
 
 **docker-compose.yml**
 
@@ -334,6 +331,14 @@ i'm fine, and you
 <br>
 
 
+
+### 도커 컴포즈 삭제
+
+더 이상 사용을 안한다면 삭제해주자.
+
+(로컬 개발PC가 힘들어함)
+
+![1](C:\Users\soong\workspace\gosgjung\0-study-kafka\img\DOCKER-COMPOSE-SINGLE-NODE\1.png)
 
 
 
