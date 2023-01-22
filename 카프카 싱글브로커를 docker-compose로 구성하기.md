@@ -2,11 +2,22 @@
 
 테스트환경으로 kafka single broker 를 구동할 경우도 있기에 docker-compose 로 카프카를 구동시키는 과정을 정리해두기로 했다.<br>
 
+사실은 single broker 로 굉장히 편하게 넘어가려 했는데 결국 멀티브로커로 구성해야 했었다.
+
 
 
 ### 참고자료
 
+- [kafka로 비디오 스트림 처리하기](https://velog.io/@djm0727/kafka%EB%A1%9C-%EB%B9%84%EB%94%94%EC%98%A4-%EC%8A%A4%ED%8A%B8%EB%A6%BC-%EC%B2%98%EB%A6%AC%ED%95%98%EA%B8%B0-w-Yolox)
+  - 최종적으로는 이 자료를 보고 잘 수행되게 되었다.
+
+- [Docker Compose로 멀티브로커 Kafka 구성하기](https://devocean.sk.com/blog/techBoardDetail.do?ID=164016)
+  - 아래 자료 다음으로 참고했던 자료.
+
 - [Docker Compose 를 이용하여 Single Broker 구성하기](https://devocean.sk.com/blog/techBoardDetail.do?ID=164007)
+  - 제일 처음으로 참고했던 자료.
+  - 하다가 안되서 1시간 정도... 헤맸다.
+
 
 <br>
 
@@ -14,9 +25,9 @@
 
 ### compose yml파일 작성
 
-내 경우에는 docker-compose.yml 이라는 파일명이 아닌 `simple-single-broker.yml` 이라는 파일명으로 도커 컴포즈 파일을 작성했다.<br>
+**docker-compose.yml**
 
-**simple-single-broker.yml**
+싱글브로커이지만 아래 컴포즈 파일처럼 브로커용도의 노드를 3개 선언해야 오류없이 실행된다.
 
 ```yaml
 version: '2'
@@ -25,6 +36,8 @@ services:
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     environment:
+      ZOO_MY_ID: 1
+      ZOO_PORT: 1
       ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -32,20 +45,57 @@ services:
       ZOOKEEPER_SYNC_LIMIT: 2
     ports:
      - "22181:2181"
-  kafka:
+    volumes:
+      - ./data/zookeeper/data:/data
+      - ./data/zookeeper/datalog:/datalogco
+  kafka1:
     image: confluentinc/cp-kafka:latest
     depends_on:
       - zookeeper
     ports:
-      - "29092:29092"
+      - "29091:9091"
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka1:9091,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:29091
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
       KAFKA_OFFSETES_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    volumes:
+      - ./data/kafka1/data:/tmp/kafka-logs
+  kafka2:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:9092"
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka2:9092,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_OFFSETES_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    volumes:
+      - ./data/kafka2/data:/tmp/kafka-logs
+  kafka3:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "29093:9093"
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka3:9093,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:29093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_OFFSETES_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    volumes:
+      - ./data/kafka3/data:/tmp/kafka-logs
 ```
 
 
@@ -132,16 +182,6 @@ image:
 
 ### docker-compose 실행
 
-내 경우는 docker-compose 파일 명을  `simple-single-broker.yml` 이라고 지정했기에 아래와 같이 -f 옵션을 주어서 실행했다.
-
-```bash
-$ docker-compose -f simple-single-broker.yml up -d
-```
-
-
-
-만약 docker-compose 파일 명을 `docker-compse.yml` 로 지정했을 경우는 아래와 같이 실행해주자.
-
 ```bash
 $ docker-compose up -d
 ```
@@ -154,9 +194,11 @@ $ docker-compose up -d
 
 ```bash
 $ docker ps
-CONTAINER ID   IMAGE                              COMMAND                  CREATED          STATUS          PORTS                                         NAMES
-ed064735b300   confluentinc/cp-kafka:latest       "/etc/confluent/dock…"   34 minutes ago   Up 34 minutes   9092/tcp, 0.0.0.0:29092->29092/tcp            simple-single-broker-kafka-1
-55e23d667674   confluentinc/cp-zookeeper:latest   "/etc/confluent/dock…"   34 minutes ago   Up 34 minutes   2888/tcp, 3888/tcp, 0.0.0.0:22181->2181/tcp   simple-single-broker-zookeeper-1
+CONTAINER ID   IMAGE                              COMMAND                  CREATED       STATUS       PORTS                                         NAMES
+dcac63fe59bf   confluentinc/cp-kafka:latest       "/etc/confluent/dock…"   7 hours ago   Up 7 hours   0.0.0.0:29092->9092/tcp                       simple-single-broker-kafka2-1
+36fa7298408f   confluentinc/cp-kafka:latest       "/etc/confluent/dock…"   7 hours ago   Up 7 hours   9092/tcp, 0.0.0.0:29091->9091/tcp             simple-single-broker-kafka1-1
+813c6a5a2235   confluentinc/cp-kafka:latest       "/etc/confluent/dock…"   7 hours ago   Up 7 hours   9092/tcp, 0.0.0.0:29093->9093/tcp             simple-single-broker-kafka3-1
+f24b1569e057   confluentinc/cp-zookeeper:latest   "/etc/confluent/dock…"   7 hours ago   Up 7 hours   2888/tcp, 3888/tcp, 0.0.0.0:22181->2181/tcp   simple-single-broker-zookeeper-1
 ```
 
 <br>
@@ -167,12 +209,13 @@ ed064735b300   confluentinc/cp-kafka:latest       "/etc/confluent/dock…"   34 
 
 ```bash
 # zookeeper
-$ docker logs 55e23d667674
+$ docker logs f24b1569e057
 ... 로그 확인
 
 # kafka 
-$ docker logs
-... 로그 확인 (카프카 로그는 꽤 길다.)
+$ docker logs 36fa7298408f
+
+# ... 하나씩 모두 조회해보자
 
 ```
 
@@ -182,7 +225,113 @@ $ docker logs
 
 ### topic 생성
 
+topic 명은 `helloworld-topic` 으로 지어줬다.
 
+```bash
+$ docker-compose exec kafka1 kafka-topics --create --topic helloworld-topic --bootstrap-server kafka1:9091 --replication-factor 3 --partitions 2
+Created topic helloworld-topic.
+```
+
+
+
+- kafka 
+  - docker-compose yml 파일에 정의한 브로커 컨테이너에 대한 서비스 이름
+- kafka-topics
+  - 카프카 토픽에 대한 명령을 실행
+- --create
+  - 토픽을 생성하겠다는 의미
+- --topic
+  - 생성할 토픽 명을 지정
+- --bootstrap-server service:port
+  - bootstrap-server 는 kafka 브로커 서비스를 의미한다.
+  - 서비스:포트로 카프카 브로커를 지정해줬다.
+- --replication-factor
+  - 복제 갯수
+  - 싱글노드이기에 1로 지정해줬다.
+- --partition
+  - 토픽 내에 파티션 갯수를 지정
+
+
+
+### 생성된 topic 확인
+
+```bash
+$ docker-compose exec kafka1 kafka-topics --describe --topic helloworld-topic --bootstrap-server kafka1:9092
+
+Topic: helloworld-topic TopicId: tC9TmTtaR-KCQKnWePCjng PartitionCount: 1       ReplicationFactor: 1    Configs:
+        Topic: helloworld-topic Partition: 0    Leader: 1       Replicas: 1     Isr: 1
+```
+
+<br>
+
+
+
+### 컨슈머 실행
+
+만들어놓은 카프카 브로커 노드 들 중 kafka1 브로커 노드에 접속하자.
+
+```bash
+$ docker-compose exec kafka1 bash
+```
+
+
+
+컨슈머를 실행한다.
+
+```bash
+$ kafka-console-consumer --topic helloworld-topic --bootstrap-server kafka1:9091
+```
+
+<br>
+
+
+
+### 프로듀서 실행
+
+터미널을 새로 열어서 만들어놓은 카프카 브로커 노드 들 중 kafka1 브로커 노드에 접속한다.
+
+```bash
+$ docker-compose exec kafka1 bash
+```
+
+<br>
+
+
+
+```bash
+$ kafka-console-producer --topic helloworld-topic --broker-list kafka1:9091
+>
+```
+
+<br>
+
+
+
+#### 프로듀서에서 메시지 전송
+
+프로듀서를 실행시킨 터미널에서 메시지를 전송해보자.
+
+```plain
+>hello
+>nice to meet you
+>i'm fine, and you
+```
+
+<br>
+
+
+
+#### 컨슈머 터미널에서 결과 확인
+
+프로듀서를 띄우기 전에 컨슈머를 띄워둔 터미널에서 아래와 같은 메시지가 나타난다면 제대로 설치된 것이다.
+
+```plain
+hello
+nice to meet you
+i'm fine, and you
+```
+
+<br>
 
 
 
