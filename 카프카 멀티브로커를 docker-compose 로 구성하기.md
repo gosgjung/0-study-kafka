@@ -18,6 +18,14 @@
 
 
 
+#### kafdrop
+
+- [github - obsidiandynamics/kafdrop](https://github.com/obsidiandynamics/kafdrop)
+
+<br>
+
+
+
 ### 도커 컴포즈 삭제
 
 도커 컴포즈 중 불필요한 것이 있다면 아래 그림처럼 삭제해주자.
