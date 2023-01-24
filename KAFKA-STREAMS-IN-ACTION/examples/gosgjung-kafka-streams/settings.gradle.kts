@@ -1,1 +1,1 @@
-rootProject.name = "gosgjung"
+rootProject.name = "gosgjung-kafka-streams"
