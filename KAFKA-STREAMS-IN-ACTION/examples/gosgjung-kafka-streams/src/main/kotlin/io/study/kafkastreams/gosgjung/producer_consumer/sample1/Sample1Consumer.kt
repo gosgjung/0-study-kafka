@@ -21,6 +21,7 @@ class Sample1Consumer {
 
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
+    // (1)
     @KafkaListener(
         id = "sample1",
         topics = [KafkaEnvironements.TOPIC_NAME_SAMPLE1],
@@ -30,11 +31,10 @@ class Sample1Consumer {
         concurrency = "\${listen.concurrency:3}",   // 필요하면 추가하자.
     )
     fun listen1(received: String){
-    // fun listen1(received: String, ack: Acknowledgment){  // ACK 모드를 MANUAL 로 세팅했을 경우
-                                                            // @KafkaListener 메서드에서는 ack: Acknowledgment 를 인자로 받게끔 해준다.
         logger.info("received = $received")
     }
 
+    // (2)
     @KafkaListener(
         id = "sample1",
         topics = [KafkaEnvironements.TOPIC_NAME_SAMPLE1],
@@ -49,6 +49,7 @@ class Sample1Consumer {
         logger.info("received = $received")
     }
 
+    // (3)
     @KafkaListener(
         id = "sample1",
         topics = [KafkaEnvironements.TOPIC_NAME_SAMPLE1],
@@ -56,7 +57,7 @@ class Sample1Consumer {
         containerFactory = KafkaEnvironements.MESSAGE_LISTENER_NAME_SAMPLE1,
         autoStartup = "\${listen.auto.start:true}", // 필요하면 추가하자.
         concurrency = "\${listen.concurrency:3}",   // 필요하면 추가하자.
-        // 어디부터 읽어들일지 명시하고 싶다면 아래와 같이...
+        // 어디부터 읽어들일지 명시하고 싶다면 아래와 같이 initialOffset 을 지정해주자.
         topicPartitions = [
             TopicPartition(
                 topic = KafkaEnvironements.MESSAGE_LISTENER_NAME_SAMPLE1,
@@ -71,6 +72,7 @@ class Sample1Consumer {
     }
 
 
+    // (4)
     // ACK 모드를 MANUAL 로 세팅했을 경우
     // 메서드의 파라미터에 Acknowledgement 를 추가해준다.
     @KafkaListener(
@@ -87,8 +89,8 @@ class Sample1Consumer {
         ack.acknowledge() // 오프셋을 커밋한다.
     }
 
-    ///
-    // 레코드의 메타 데이터를 가져오는 방식 
+    // (5)
+    /// 레코드의 메타 데이터를 가져오는 방식
     // = (1) @Payload, @Header 를 이용하는 방식
     // = (2) ConsumerRecordMetadata 객체를 이용하는 방법
     

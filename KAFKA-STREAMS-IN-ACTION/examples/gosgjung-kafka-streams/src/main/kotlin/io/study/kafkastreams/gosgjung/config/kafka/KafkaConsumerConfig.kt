@@ -15,13 +15,13 @@ import org.springframework.kafka.listener.ContainerProperties
 class KafkaConsumerConfig {
 
     @Value("\${spring.kafka.consumer.bootstrap-servers}")
-    private lateinit var BOOTSTRAP_SERVER: String
+    private lateinit var BOOTSTRAP_SERVERS: String
 
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     private fun kafkaConsumerProperties(): Map<String, Any> =
         mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9091",
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to BOOTSTRAP_SERVERS,
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "latest", // 마지막 읽은 부분부터 조회
             ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false,
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
@@ -49,6 +49,7 @@ class KafkaConsumerConfig {
         factory.setConcurrency(3)
         factory.consumerFactory = DefaultKafkaConsumerFactory(kafkaConsumerProperties())
         factory.containerProperties.pollTimeout = 500
+        factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
         factory.isBatchListener = true
         return factory
     }
