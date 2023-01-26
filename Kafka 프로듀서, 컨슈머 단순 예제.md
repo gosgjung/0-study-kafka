@@ -18,6 +18,16 @@ RabbitMQ를 사용해서 주식데이터처리 서버를 개발할때 RabbitMQ�
 
 
 
+### 예제코드
+
+오늘 작성한 코드는 아래 링크에 있다.
+
+- https://github.com/gosgjung/0-study-kafka/tree/main/KAFKA-STREAMS-IN-ACTION/examples/gosgjung-kafka-streams/src/main/kotlin/io/study/kafkastreams/gosgjung/producer_consumer/sample1
+
+<br>
+
+
+
 ### docker-compose.yml
 
 바쁘기도 하고 귀찮아서 안적으려고 했지만, 적어야겠다.
