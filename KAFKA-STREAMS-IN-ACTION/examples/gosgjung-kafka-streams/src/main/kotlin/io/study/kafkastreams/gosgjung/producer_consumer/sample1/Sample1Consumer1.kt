@@ -16,7 +16,7 @@ import org.springframework.messaging.handler.annotation.Header
 import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.stereotype.Component
 
-@Component
+//@Component
 class Sample1Consumer {
 
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
